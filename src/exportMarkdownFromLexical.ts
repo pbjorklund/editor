@@ -6,6 +6,7 @@ import type { JsxComponentDescriptor } from './plugins/jsx'
 import { isMdastHTMLNode } from './plugins/core/MdastHTMLNode'
 import { mergeStyleAttributes } from './utils/mergeStyleAttributes'
 import { ImportStatement } from './importMarkdownToLexical'
+import DOMPurify from 'dompurify'
 
 export type { Options as ToMarkdownOptions } from 'mdast-util-to-markdown'
 
@@ -390,6 +391,10 @@ export interface ExportMarkdownFromLexicalOptions extends ExportLexicalTreeOptio
    * The options to pass to `toMarkdown`
    */
   toMarkdownOptions: ToMarkdownOptions
+  /**
+   * Enable or disable content sanitization.
+   */
+  sanitizeContent?: boolean
 }
 
 /**
@@ -412,6 +417,10 @@ export interface LexicalConvertOptions {
   toMarkdownOptions?: ToMarkdownOptions
 }
 
+function sanitizeMarkdown(markdown: string): string {
+  return DOMPurify.sanitize(markdown, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'br', 'div', 'span'], ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style'] })
+}
+
 /**
  * @internal
  */
@@ -421,12 +430,12 @@ export function exportMarkdownFromLexical({
   toMarkdownExtensions,
   visitors,
   jsxComponentDescriptors,
-  jsxIsAvailable
+  jsxIsAvailable,
+  sanitizeContent = false
 }: ExportMarkdownFromLexicalOptions): string {
-  return (
-    toMarkdown(exportLexicalTreeToMdast({ root, visitors, jsxComponentDescriptors, jsxIsAvailable }), {
-      extensions: toMarkdownExtensions,
-      ...toMarkdownOptions
-    }) + '\n'
-  )
+  const markdown = toMarkdown(exportLexicalTreeToMdast({ root, visitors, jsxComponentDescriptors, jsxIsAvailable }), {
+    extensions: toMarkdownExtensions,
+    ...toMarkdownOptions
+  }) + '\n'
+  return sanitizeContent ? sanitizeMarkdown(markdown) : markdown
 }

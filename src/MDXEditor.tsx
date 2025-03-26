@@ -310,6 +310,11 @@ export interface MDXEditorProps {
    * A custom lexical theme to use for the editor.
    */
   lexicalTheme?: EditorThemeClasses
+
+  /**
+   * Enable or disable content sanitization.
+   */
+  sanitizeContent?: boolean
 }
 
 /**
@@ -335,7 +340,8 @@ export const MDXEditor = React.forwardRef<MDXEditorMethods, MDXEditorProps>((pro
           onError: props.onError ?? noop,
           translation: props.translation ?? defaultTranslation,
           trim: props.trim ?? true,
-          lexicalTheme: props.lexicalTheme
+          lexicalTheme: props.lexicalTheme,
+          sanitizeContent: props.sanitizeContent ?? false
         }),
         ...(props.plugins ?? [])
       ]}

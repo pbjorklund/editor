@@ -1,9 +1,8 @@
-// typed version of https://github.com/slorber/remark-comment/blob/slorber/multiline-comment-bug/index.js
-//
 import type { Handle, Transform } from 'mdast-util-from-markdown'
 import { factorySpace } from 'micromark-factory-space'
 import { markdownLineEnding } from 'micromark-util-character'
 import { codes, types } from 'micromark-util-symbol'
+import DOMPurify from 'dompurify'
 
 import type { Code, Extension, Tokenizer } from 'micromark-util-types'
 
@@ -45,7 +44,7 @@ export function commentFromMarkdown(_options: { ast?: boolean }): Partial<Config
     },
     exit: {
       comment(token) {
-        const text = this.resume()
+        const text = sanitizeHtmlComment(this.resume())
         if (_options.ast) {
           this.enter(
             {
@@ -61,6 +60,10 @@ export function commentFromMarkdown(_options: { ast?: boolean }): Partial<Config
       }
     }
   }
+}
+
+function sanitizeHtmlComment(comment: string): string {
+  return DOMPurify.sanitize(comment, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
 }
 
 const tokenize: Tokenizer = (effects, ok, nok) => {
