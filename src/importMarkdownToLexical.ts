@@ -9,6 +9,7 @@ import { FORMAT } from './FormatConstants'
 import { CodeBlockEditorDescriptor } from './plugins/codeblock'
 import { DirectiveDescriptor } from './plugins/directives'
 import { JsxComponentDescriptor } from './plugins/jsx'
+import DOMPurify from 'dompurify'
 
 export interface ImportStatement {
   source: string
@@ -137,6 +138,7 @@ export interface MarkdownParseOptions extends Omit<MdastTreeImportOptions, 'mdas
   markdown: string
   syntaxExtensions: NonNullable<ParseOptions['extensions']>
   mdastExtensions: MdastExtensions
+  sanitizeContent?: boolean
 }
 
 /**
@@ -202,6 +204,10 @@ function gatherMetadata(mdastNode: Mdast.RootContent | Mdast.Root): MetaData {
   }
 }
 
+function sanitizeMarkdown(markdown: string): string {
+  return DOMPurify.sanitize(markdown, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'br', 'div', 'span'], ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style'] })
+}
+
 /** @internal */
 export function importMarkdownToLexical({
   root,
@@ -209,11 +215,12 @@ export function importMarkdownToLexical({
   visitors,
   syntaxExtensions,
   mdastExtensions,
+  sanitizeContent = false,
   ...descriptors
 }: MarkdownParseOptions): void {
   let mdastRoot: Mdast.Root
   try {
-    mdastRoot = fromMarkdown(markdown, {
+    mdastRoot = fromMarkdown(sanitizeContent ? sanitizeMarkdown(markdown) : markdown, {
       extensions: syntaxExtensions,
       mdastExtensions
     })
